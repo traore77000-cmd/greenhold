@@ -1,0 +1,669 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import Navigation from "@/components/Navigation";
+import Footer from "@/components/Footer";
+import { supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
+
+// ─── Types ────────────────────────────────────────────────────────
+type View = "login" | "signup" | "reset";
+type Msg = { type: "success" | "error"; text: string };
+
+interface PartRow {
+  nombre_parts: number;
+  statut: string;
+}
+
+// ─── Ambassador level helper ──────────────────────────────────────
+function getLevel(parts: number) {
+  if (parts >= 50) return { label: "Ambassadeur", emoji: "🌴", color: "#C8972A", reduction: "15%", nextLabel: null, nextAt: null };
+  if (parts >= 15) return { label: "Forestier", emoji: "🌳", color: "#C8972A", reduction: "10%", nextLabel: "Ambassadeur", nextAt: 50 };
+  if (parts >= 5) return { label: "Cultivateur", emoji: "🌿", color: "#2A7A4F", reduction: "5%", nextLabel: "Forestier", nextAt: 15 };
+  return { label: "Planteur", emoji: "🌱", color: "#6B7280", reduction: null, nextLabel: "Cultivateur", nextAt: 5 };
+}
+
+// ─── Shared input style ───────────────────────────────────────────
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "14px 16px",
+  borderRadius: "10px",
+  border: "2px solid #DDE8E2",
+  backgroundColor: "#FFFFFF",
+  color: "#1C2B22",
+  fontFamily: "var(--font-sans)",
+  fontSize: "0.95rem",
+  outline: "none",
+};
+
+// ─── Dashboard: authenticated view ───────────────────────────────
+function Dashboard({ user, onSignOut }: { user: User; onSignOut: () => void }) {
+  const [totalParts, setTotalParts] = useState<number | null>(null);
+  const [loadingParts, setLoadingParts] = useState(true);
+  const [copyDone, setCopyDone] = useState(false);
+
+  useEffect(() => {
+    async function fetchParts() {
+      const { data } = await supabase
+        .from("parts")
+        .select("nombre_parts, statut")
+        .eq("user_id", user.id);
+
+      if (data) {
+        const confirmed = (data as PartRow[])
+          .filter((r) => r.statut === "confirmé")
+          .reduce((sum, r) => sum + r.nombre_parts, 0);
+        setTotalParts(confirmed);
+      }
+      setLoadingParts(false);
+    }
+    fetchParts();
+  }, [user.id]);
+
+  const level = getLevel(totalParts ?? 0);
+  const referralLink = `https://greenhold.fr/boutique?ref=${user.id.slice(0, 8)}`;
+
+  const copyReferral = () => {
+    navigator.clipboard.writeText(referralLink).then(() => {
+      setCopyDone(true);
+      setTimeout(() => setCopyDone(false), 2000);
+    });
+  };
+
+  const initials = (user.email ?? "?")
+    .split("@")[0]
+    .slice(0, 2)
+    .toUpperCase();
+
+  return (
+    <div className="mx-auto px-4 py-10" style={{ maxWidth: "900px" }}>
+
+      {/* Welcome bar */}
+      <div
+        className="rounded-2xl p-6 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+        style={{ backgroundColor: "#0C2518" }}
+      >
+        <div className="flex items-center gap-4">
+          <div
+            className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold flex-shrink-0"
+            style={{ backgroundColor: "#C8972A", color: "#0C2518", fontFamily: "var(--font-serif)" }}
+          >
+            {initials}
+          </div>
+          <div>
+            <p className="text-xs mb-1" style={{ color: "#C8E6D4", fontFamily: "var(--font-sans)" }}>
+              Bienvenue dans ta forêt
+            </p>
+            <p className="font-semibold text-white" style={{ fontFamily: "var(--font-sans)" }}>
+              {user.email}
+            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-sm">{level.emoji}</span>
+              <span
+                className="text-xs font-bold px-2 py-0.5 rounded-full"
+                style={{ backgroundColor: level.color, color: "#0C2518", fontFamily: "var(--font-sans)" }}
+              >
+                {level.label}
+              </span>
+              {level.reduction && (
+                <span className="text-xs" style={{ color: "#C8E6D4", fontFamily: "var(--font-sans)" }}>
+                  {level.reduction} de réduction
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={onSignOut}
+          className="text-xs px-4 py-2 rounded-lg transition-colors"
+          style={{ color: "#C8E6D4", border: "1px solid #2A7A4F", fontFamily: "var(--font-sans)", backgroundColor: "transparent" }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#1A4D35")}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+        >
+          Se déconnecter
+        </button>
+      </div>
+
+      {/* Stats row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        {[
+          {
+            icon: "🌳",
+            label: "Parts détenues",
+            value: loadingParts ? "..." : (totalParts ?? 0).toString(),
+            sub: "parts confirmées",
+          },
+          {
+            icon: "💰",
+            label: "Revenu estimé an 1",
+            value: loadingParts ? "..." : `${((totalParts ?? 0) * 9.82).toFixed(0)}€`,
+            sub: "projection année 1",
+          },
+          {
+            icon: "📅",
+            label: "Premier virement",
+            value: "Mois 9",
+            sub: "papayer intercalaire",
+          },
+          {
+            icon: level.emoji,
+            label: "Niveau",
+            value: level.label,
+            sub: level.nextAt ? `Prochain : ${level.nextLabel} (${level.nextAt} parts)` : "Niveau maximum",
+          },
+        ].map(({ icon, label, value, sub }) => (
+          <div
+            key={label}
+            className="rounded-2xl p-5"
+            style={{ backgroundColor: "#FFFFFF", border: "1px solid #DDE8E2", borderRadius: "8px" }}
+          >
+            <p className="text-2xl mb-2">{icon}</p>
+            <p className="text-xs mb-1" style={{ color: "#6B7280", fontFamily: "var(--font-sans)" }}>
+              {label}
+            </p>
+            <p
+              className="text-2xl font-bold"
+              style={{ color: "#0C2518", fontFamily: "var(--font-serif)" }}
+            >
+              {value}
+            </p>
+            <p className="text-xs mt-1" style={{ color: "#6B7280", fontFamily: "var(--font-sans)" }}>
+              {sub}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Level progress */}
+      {level.nextAt && totalParts !== null && (
+        <div
+          className="rounded-2xl p-5 mb-8"
+          style={{ backgroundColor: "#F8F4EE", border: "1px solid #DDE8E2", borderRadius: "8px" }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-medium" style={{ color: "#0C2518", fontFamily: "var(--font-sans)" }}>
+              Progression vers {level.nextLabel} {level.nextAt && `(${level.nextAt} parts)`}
+            </p>
+            <span className="text-sm font-bold" style={{ color: "#C8972A", fontFamily: "var(--font-serif)" }}>
+              {totalParts} / {level.nextAt}
+            </span>
+          </div>
+          <div className="w-full h-3 rounded-full" style={{ backgroundColor: "#DDE8E2" }}>
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{
+                width: `${Math.min((totalParts / level.nextAt) * 100, 100)}%`,
+                background: "linear-gradient(90deg, #1A4D35, #C8972A)",
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Quick actions */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <Link
+          href="/boutique"
+          className="rounded-2xl p-5 flex items-center gap-4 transition-all duration-200"
+          style={{ backgroundColor: "#0C2518", borderRadius: "8px" }}
+        >
+          <span className="text-3xl">🌱</span>
+          <div>
+            <p className="font-semibold text-white text-sm" style={{ fontFamily: "var(--font-sans)" }}>
+              Planter plus d&apos;arbres
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: "#C8E6D4", fontFamily: "var(--font-sans)" }}>
+              Agrandir ma forêt
+            </p>
+          </div>
+        </Link>
+        <Link
+          href="/offrir"
+          className="rounded-2xl p-5 flex items-center gap-4 transition-all duration-200"
+          style={{ backgroundColor: "#1A4D35", borderRadius: "8px" }}
+        >
+          <span className="text-3xl">🎁</span>
+          <div>
+            <p className="font-semibold text-white text-sm" style={{ fontFamily: "var(--font-sans)" }}>
+              Offrir un arbre
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: "#C8E6D4", fontFamily: "var(--font-sans)" }}>
+              Cadeau original
+            </p>
+          </div>
+        </Link>
+        <div
+          className="rounded-2xl p-5 flex items-center gap-4"
+          style={{ backgroundColor: "#F8F4EE", border: "1px solid #DDE8E2", borderRadius: "8px" }}
+        >
+          <span className="text-3xl">📸</span>
+          <div>
+            <p className="font-semibold text-sm" style={{ color: "#0C2518", fontFamily: "var(--font-sans)" }}>
+              Mes photos terrain
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: "#6B7280", fontFamily: "var(--font-sans)" }}>
+              Disponibles après plantation
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Referral link */}
+      <div
+        className="rounded-2xl p-6 mb-8"
+        style={{ backgroundColor: "#F8F4EE", border: "2px solid #C8972A", borderRadius: "8px" }}
+      >
+        <div className="flex items-start justify-between gap-4 mb-3">
+          <div>
+            <p className="font-semibold text-sm" style={{ color: "#0C2518", fontFamily: "var(--font-sans)" }}>
+              🔗 Ton lien ambassadeur
+            </p>
+            <p className="text-xs mt-1" style={{ color: "#6B7280", fontFamily: "var(--font-sans)" }}>
+              Partage ce lien — touche 5% de commission sur chaque vente filleul
+            </p>
+          </div>
+          {level.label === "Ambassadeur" && (
+            <span
+              className="text-xs font-bold px-3 py-1 rounded-full flex-shrink-0"
+              style={{ backgroundColor: "#C8972A", color: "#0C2518", fontFamily: "var(--font-sans)" }}
+            >
+              🌴 Actif
+            </span>
+          )}
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div
+            className="flex-1 px-4 py-3 rounded-xl text-sm truncate"
+            style={{ backgroundColor: "#FFFFFF", border: "1px solid #DDE8E2", color: "#6B7280", fontFamily: "var(--font-sans)" }}
+          >
+            {referralLink}
+          </div>
+          <button
+            onClick={copyReferral}
+            className="px-5 py-3 rounded-xl text-sm font-semibold transition-all"
+            style={{
+              backgroundColor: copyDone ? "#1A4D35" : "#C8972A",
+              color: "#0C2518",
+              fontFamily: "var(--font-sans)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {copyDone ? "✓ Copié !" : "Copier le lien"}
+          </button>
+        </div>
+        {level.label !== "Ambassadeur" && (
+          <p className="text-xs mt-3" style={{ color: "#6B7280", fontFamily: "var(--font-sans)" }}>
+            💡 La commission de 5% sur les filleuls est active à partir du niveau Ambassadeur (50 parts).
+            Tu es actuellement <strong style={{ color: "#C8972A" }}>{level.label}</strong>.
+          </p>
+        )}
+      </div>
+
+      {/* Account settings */}
+      <div
+        className="rounded-2xl p-6"
+        style={{ backgroundColor: "#FFFFFF", border: "1px solid #DDE8E2", borderRadius: "8px" }}
+      >
+        <p className="font-semibold mb-4" style={{ color: "#0C2518", fontFamily: "var(--font-sans)" }}>
+          ⚙️ Mon compte
+        </p>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between py-3" style={{ borderBottom: "1px solid #DDE8E2" }}>
+            <span className="text-sm" style={{ color: "#6B7280", fontFamily: "var(--font-sans)" }}>Adresse e-mail</span>
+            <span className="text-sm font-medium" style={{ color: "#0C2518", fontFamily: "var(--font-sans)" }}>
+              {user.email}
+            </span>
+          </div>
+          <div className="flex items-center justify-between py-3" style={{ borderBottom: "1px solid #DDE8E2" }}>
+            <span className="text-sm" style={{ color: "#6B7280", fontFamily: "var(--font-sans)" }}>Membre depuis</span>
+            <span className="text-sm" style={{ color: "#0C2518", fontFamily: "var(--font-sans)" }}>
+              {user.created_at ? new Date(user.created_at).toLocaleDateString("fr-FR", { year: "numeric", month: "long", day: "numeric" }) : "—"}
+            </span>
+          </div>
+          <div className="flex items-center justify-between py-3">
+            <span className="text-sm" style={{ color: "#6B7280", fontFamily: "var(--font-sans)" }}>ID actionnaire</span>
+            <span className="text-xs font-mono" style={{ color: "#6B7280" }}>
+              {user.id.slice(0, 16)}…
+            </span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
+// ─── Auth form: login / signup / reset ────────────────────────────
+function AuthForm() {
+  const [view, setView] = useState<View>("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [msg, setMsg] = useState<Msg | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const resetMsg = () => setMsg(null);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    resetMsg();
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      const friendly =
+        error.message === "Invalid login credentials"
+          ? "Email ou mot de passe incorrect."
+          : error.message;
+      setMsg({ type: "error", text: friendly });
+    }
+    setSubmitting(false);
+  };
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    resetMsg();
+    if (password.length < 8) {
+      setMsg({ type: "error", text: "Le mot de passe doit contenir au moins 8 caractères." });
+      setSubmitting(false);
+      return;
+    }
+    const { error } = await supabase.auth.signUp({ email, password });
+    if (error) {
+      setMsg({ type: "error", text: error.message });
+    } else {
+      setMsg({
+        type: "success",
+        text: "Compte créé ! Vérifie tes e-mails pour confirmer ton adresse avant de te connecter.",
+      });
+    }
+    setSubmitting(false);
+  };
+
+  const handleReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    resetMsg();
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/mon-espace`,
+    });
+    if (error) {
+      setMsg({ type: "error", text: error.message });
+    } else {
+      setMsg({ type: "success", text: "E-mail de réinitialisation envoyé ! Vérifie ta boîte mail." });
+    }
+    setSubmitting(false);
+  };
+
+  return (
+    <div className="mx-auto px-4 py-16" style={{ maxWidth: "480px" }}>
+
+      {/* Tab switcher (login / signup only) */}
+      {view !== "reset" && (
+        <div
+          className="flex rounded-xl p-1 mb-8"
+          style={{ backgroundColor: "#DDE8E2" }}
+        >
+          {(["login", "signup"] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => { setView(v); resetMsg(); }}
+              className="flex-1 py-3 rounded-lg text-sm font-semibold transition-all duration-200"
+              style={{
+                backgroundColor: view === v ? "#0C2518" : "transparent",
+                color: view === v ? "#FFFFFF" : "#6B7280",
+                fontFamily: "var(--font-sans)",
+              }}
+            >
+              {v === "login" ? "Se connecter" : "Créer mon compte"}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Reset heading */}
+      {view === "reset" && (
+        <div className="mb-8">
+          <button
+            onClick={() => { setView("login"); resetMsg(); }}
+            className="flex items-center gap-2 text-sm mb-4"
+            style={{ color: "#6B7280", fontFamily: "var(--font-sans)" }}
+          >
+            ← Retour à la connexion
+          </button>
+          <h2 className="text-2xl font-semibold" style={{ color: "#0C2518", fontFamily: "var(--font-serif)" }}>
+            Mot de passe oublié
+          </h2>
+          <p className="text-sm mt-2" style={{ color: "#6B7280", fontFamily: "var(--font-sans)" }}>
+            Saisis ton e-mail pour recevoir un lien de réinitialisation.
+          </p>
+        </div>
+      )}
+
+      {/* Intro message (login) */}
+      {view === "login" && (
+        <div
+          className="rounded-xl p-5 mb-6 flex items-start gap-3"
+          style={{ backgroundColor: "#C8E6D4", border: "1px solid #2A7A4F" }}
+        >
+          <span className="text-2xl">🌿</span>
+          <p className="text-sm leading-relaxed" style={{ color: "#0C2518", fontFamily: "var(--font-sans)" }}>
+            Connecte-toi pour accéder à ta forêt, tes photos et tes revenus.
+          </p>
+        </div>
+      )}
+
+      {/* Form */}
+      <form onSubmit={view === "login" ? handleLogin : view === "signup" ? handleSignup : handleReset}>
+        <div className="space-y-4 mb-6">
+
+          {/* Email */}
+          <div>
+            <label
+              className="block text-sm font-medium mb-2"
+              style={{ color: "#0C2518", fontFamily: "var(--font-sans)" }}
+            >
+              Adresse e-mail
+            </label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="toi@email.com"
+              style={inputStyle}
+              onFocus={(e) => (e.target.style.borderColor = "#C8972A")}
+              onBlur={(e) => (e.target.style.borderColor = "#DDE8E2")}
+              disabled={submitting}
+              autoComplete="email"
+            />
+          </div>
+
+          {/* Password (not shown for reset) */}
+          {view !== "reset" && (
+            <div>
+              <label
+                className="block text-sm font-medium mb-2"
+                style={{ color: "#0C2518", fontFamily: "var(--font-sans)" }}
+              >
+                Mot de passe
+                {view === "signup" && (
+                  <span className="ml-1 font-normal" style={{ color: "#6B7280" }}>(8 caractères minimum)</span>
+                )}
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  style={{ ...inputStyle, paddingRight: "48px" }}
+                  onFocus={(e) => (e.target.style.borderColor = "#C8972A")}
+                  onBlur={(e) => (e.target.style.borderColor = "#DDE8E2")}
+                  disabled={submitting}
+                  autoComplete={view === "login" ? "current-password" : "new-password"}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-sm"
+                  style={{ color: "#6B7280" }}
+                  tabIndex={-1}
+                >
+                  {showPassword ? "🙈" : "👁️"}
+                </button>
+              </div>
+            </div>
+          )}
+
+        </div>
+
+        {/* Message banner */}
+        {msg && (
+          <div
+            className="rounded-xl p-4 mb-5 text-sm"
+            style={{
+              backgroundColor: msg.type === "success" ? "#C8E6D4" : "#FEE2E2",
+              border: `1px solid ${msg.type === "success" ? "#2A7A4F" : "#FCA5A5"}`,
+              color: msg.type === "success" ? "#0C2518" : "#991B1B",
+              fontFamily: "var(--font-sans)",
+            }}
+          >
+            {msg.text}
+          </div>
+        )}
+
+        {/* Submit button */}
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full py-4 rounded-xl font-semibold text-base transition-all duration-200"
+          style={{
+            backgroundColor: submitting ? "#6B7280" : "#0C2518",
+            color: "#F0C55A",
+            fontFamily: "var(--font-sans)",
+            minHeight: "56px",
+            cursor: submitting ? "not-allowed" : "pointer",
+          }}
+        >
+          {submitting
+            ? "Chargement..."
+            : view === "login"
+            ? "Se connecter"
+            : view === "signup"
+            ? "Créer mon compte"
+            : "Envoyer le lien de réinitialisation"}
+        </button>
+
+        {/* Forgot password link (login only) */}
+        {view === "login" && (
+          <button
+            type="button"
+            onClick={() => { setView("reset"); resetMsg(); }}
+            className="w-full mt-4 text-sm text-center"
+            style={{ color: "#6B7280", fontFamily: "var(--font-sans)" }}
+          >
+            Mot de passe oublié ?
+          </button>
+        )}
+      </form>
+
+      {/* Legal */}
+      {view === "signup" && (
+        <p className="text-xs text-center mt-6" style={{ color: "#6B7280", fontFamily: "var(--font-sans)" }}>
+          En créant un compte, tu acceptes nos{" "}
+          <Link href="/cgv" className="underline" style={{ color: "#C8972A" }}>CGV</Link>{" "}
+          et notre{" "}
+          <Link href="/confidentialite" className="underline" style={{ color: "#C8972A" }}>Politique de confidentialité</Link>.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ─── Loading spinner ───────────────────────────────────────────────
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center py-24">
+      <div
+        className="w-10 h-10 rounded-full border-4 animate-spin"
+        style={{ borderColor: "#DDE8E2", borderTopColor: "#C8972A" }}
+      />
+    </div>
+  );
+}
+
+// ─── Main page ────────────────────────────────────────────────────
+export default function MonEspacePage() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Get current session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Listen for auth state changes (login / logout)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSignOut = useCallback(async () => {
+    await supabase.auth.signOut();
+  }, []);
+
+  return (
+    <main style={{ backgroundColor: "#F8F4EE", minHeight: "100vh" }}>
+      <Navigation />
+
+      {/* Page header */}
+      <section className="pt-28 pb-10 px-4" style={{ backgroundColor: "#0C2518" }}>
+        <div className="mx-auto" style={{ maxWidth: "900px" }}>
+          <p
+            className="text-xs font-semibold uppercase tracking-widest mb-3"
+            style={{ color: "#C8972A", fontFamily: "var(--font-sans)" }}
+          >
+            Espace actionnaire
+          </p>
+          <h1
+            className="text-white"
+            style={{
+              fontFamily: "var(--font-serif)",
+              fontSize: "clamp(2rem, 4vw, 3rem)",
+              fontWeight: 600,
+            }}
+          >
+            {loading ? "Mon espace" : user ? "Ma forêt GREENHOLD" : "Connexion à mon espace"}
+          </h1>
+          {!user && !loading && (
+            <p className="mt-2 text-sm" style={{ color: "#C8E6D4", fontFamily: "var(--font-sans)" }}>
+              Connecte-toi pour accéder à ta forêt, tes photos et tes revenus.
+            </p>
+          )}
+        </div>
+      </section>
+
+      {/* Content area */}
+      <div style={{ backgroundColor: "#F8F4EE" }}>
+        {loading ? (
+          <LoadingSpinner />
+        ) : user ? (
+          <Dashboard user={user} onSignOut={handleSignOut} />
+        ) : (
+          <AuthForm />
+        )}
+      </div>
+
+      <Footer />
+    </main>
+  );
+}
