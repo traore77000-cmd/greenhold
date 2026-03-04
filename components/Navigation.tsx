@@ -68,7 +68,7 @@ export default function Navigation() {
         {/* Desktop CTA Buttons */}
         <div className="hidden lg:flex items-center gap-3">
           <Link
-            href="/compte"
+            href="/mon-espace"
             className="px-4 py-2 text-sm font-medium rounded-lg border transition-colors duration-200"
             style={{
               color: "#C8E6D4",
@@ -156,7 +156,7 @@ export default function Navigation() {
             ))}
             <div className="flex flex-col gap-3 pt-2 border-t" style={{ borderColor: "#1A4D35" }}>
               <Link
-                href="/compte"
+                href="/mon-espace"
                 className="text-center px-4 py-3 text-sm font-medium rounded-lg border"
                 style={{
                   color: "#C8E6D4",
