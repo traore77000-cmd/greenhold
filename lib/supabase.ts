@@ -13,8 +13,14 @@ export type Preinscrit = {
 
 export type Part = {
   id?: string;
-  user_id: string;
+  user_id: string | null;
+  pack_id?: string | null;
   nombre_parts: number;
+  montant?: number | null;        // amount in euro cents (e.g. 1500 = 15€)
   date_achat?: string;
   statut: "en_attente" | "confirmé" | "annulé";
+  session_id?: string | null;     // Stripe checkout session ID
+  cert_number?: string | null;
+  buyer_email?: string | null;
+  buyer_name?: string | null;
 };

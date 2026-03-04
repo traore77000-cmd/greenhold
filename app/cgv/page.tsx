@@ -22,8 +22,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function P({ children }: { children: React.ReactNode }) {
-  return <p className="text-sm leading-relaxed" style={{ color: "#1C2B22", fontFamily: "var(--font-sans)" }}>{children}</p>;
+function P({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <p className={`text-sm leading-relaxed${className ? ` ${className}` : ""}`} style={{ color: "#1C2B22", fontFamily: "var(--font-sans)" }}>{children}</p>;
 }
 
 function Highlight({ children }: { children: React.ReactNode }) {
