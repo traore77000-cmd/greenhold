@@ -101,8 +101,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert purchase into parts table
+    // user_id falls back to "guest:{email}" for non-authenticated buyers (column is NOT NULL)
     const { error: insertError } = await supabaseAdmin.from("parts").insert({
-      user_id: userId,
+      user_id: userId ?? `guest:${buyerEmail || session.id}`,
       pack_id: packId,
       nombre_parts: meta.parts,
       montant: amountPaid,
