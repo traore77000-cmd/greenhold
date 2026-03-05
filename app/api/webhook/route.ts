@@ -116,7 +116,33 @@ export async function POST(request: NextRequest) {
     });
 
     if (insertError) {
-      console.error("[Webhook] Insert error:", insertError.message);
+      console.error("[Webhook] parts insert error:", insertError.message);
+    }
+
+    // Also insert into achats (audit log with full Stripe metadata)
+    const isGift = session.metadata?.is_gift === "true";
+    const { error: achatError } = await supabaseAdmin.from("achats").insert({
+      user_id: userId ?? null,
+      buyer_email: buyerEmail,
+      buyer_name: buyerName,
+      pack_id: packId,
+      nombre_parts: meta.parts,
+      montant: amountPaid,
+      session_id: session.id,
+      payment_intent: typeof session.payment_intent === "string" ? session.payment_intent : null,
+      statut_paiement: "payé",
+      is_gift: isGift,
+      recipient_name: session.metadata?.recipient_name ?? null,
+      recipient_email: session.metadata?.recipient_email ?? null,
+      sender_name: session.metadata?.sender_name ?? null,
+      gift_message: session.metadata?.gift_message ?? null,
+      send_date: session.metadata?.send_date ?? null,
+      cert_number: certNumber,
+      pdf_generated: false,
+      email_sent: false,
+    });
+    if (achatError) {
+      console.error("[Webhook] achats insert error:", achatError.message);
     }
 
     // Generate PDF certificate
@@ -136,6 +162,12 @@ export async function POST(request: NextRequest) {
       date,
     });
 
+    // Mark PDF as generated in achats
+    await supabaseAdmin
+      .from("achats")
+      .update({ pdf_generated: true })
+      .eq("session_id", session.id);
+
     // Send confirmation email with PDF attachment
     if (buyerEmail) {
       try {
@@ -147,6 +179,11 @@ export async function POST(request: NextRequest) {
           certNumber,
           pdfBuffer,
         });
+        // Mark email as sent in achats
+        await supabaseAdmin
+          .from("achats")
+          .update({ email_sent: true })
+          .eq("session_id", session.id);
       } catch (emailErr) {
         console.error("[Webhook] Email error:", emailErr);
       }
