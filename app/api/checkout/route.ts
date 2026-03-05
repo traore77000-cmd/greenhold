@@ -5,22 +5,26 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2026-02-25.clover",
 });
 
-const PACK_META: Record<string, { name: string; description: string }> = {
+const PACK_META: Record<string, { name: string; description: string; nombre_parts: number }> = {
   decouverte: {
     name: "Pack Découverte GREENHOLD",
     description: "1 Goyavier + 1 Papayer offert — 1 part dans la forêt GREENHOLD Sénégal",
+    nombre_parts: 1,
   },
   famille: {
     name: "Pack Famille GREENHOLD",
     description: "1 Goyavier + 1 Manguier + 2 Papayers offerts — 2 parts dans la forêt GREENHOLD Sénégal",
+    nombre_parts: 2,
   },
   investisseur: {
     name: "Pack Investisseur GREENHOLD",
     description: "5 Manguiers + 5 Papayers offerts — 5 parts dans la forêt GREENHOLD Sénégal",
+    nombre_parts: 5,
   },
   heritage: {
     name: "Pack Héritage Senior GREENHOLD",
     description: "13 Manguiers + 12 Goyaviers + 25 Papayers — 25 parts + clause transmission héritiers",
+    nombre_parts: 25,
   },
 };
 
@@ -45,8 +49,11 @@ export async function POST(request: NextRequest) {
       process.env.NEXT_PUBLIC_URL ??
       (request.headers.get("origin") || "http://localhost:3000");
 
+    const nombreParts = meta.nombre_parts ?? 1;
+
     const metadata: Record<string, string> = {
       pack_id: packId,
+      nombre_parts: String(nombreParts),
       is_gift: gift ? "true" : "false",
     };
     if (gift && recipientName) metadata.recipient_name = recipientName;
