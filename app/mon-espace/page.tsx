@@ -159,6 +159,7 @@ function Dashboard({ user, onSignOut }: { user: User; onSignOut: () => void }) {
         .from("updates_terrain")
         .select("id, created_at, photo_url, message")
         .eq("statut", "visible")
+        .eq("actionnaire_id", user.id)
         .order("created_at", { ascending: false });
       if (data) setTerrainPhotos(data as TerrainPhoto[]);
       setLoadingTerrain(false);
@@ -542,8 +543,9 @@ function Dashboard({ user, onSignOut }: { user: User; onSignOut: () => void }) {
         ) : terrainPhotos.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-4xl mb-3">🌱</p>
-            <p className="text-sm" style={{ color: "#6B7280", fontFamily: "var(--font-sans)" }}>
-              Les photos seront disponibles après la plantation de vos arbres.
+            <p className="text-sm" style={{ color: "#6B7280", fontFamily: "var(--font-sans)", lineHeight: 1.7 }}>
+              Il n'y a aucune photo pour le moment, peut-être dans quelques semaines !<br />
+              Notre équipe au Sénégal prépare la plantation.
             </p>
           </div>
         ) : (

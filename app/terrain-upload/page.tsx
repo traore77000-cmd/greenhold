@@ -12,6 +12,13 @@ export default function TerrainUpload() {
   const [etape, setEtape] = useState<Etape>("auth");
   const [mdp, setMdp] = useState("");
   const [erreurMdp, setErreurMdp] = useState(false);
+
+  // Champs actionnaire
+  const [prenom, setPrenom] = useState("");
+  const [nom, setNom] = useState("");
+  const [actionnaireId, setActionnaireId] = useState("");
+
+  // Photo & message
   const [photo, setPhoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [message, setMessage] = useState("");
@@ -20,7 +27,6 @@ export default function TerrainUpload() {
   const inputCameraRef = useRef<HTMLInputElement>(null);
   const inputGalerieRef = useRef<HTMLInputElement>(null);
 
-  // Vérifier si déjà authentifié
   useEffect(() => {
     if (localStorage.getItem(STORAGE_KEY) === "ok") {
       setEtape("formulaire");
@@ -39,43 +45,65 @@ export default function TerrainUpload() {
 
   const choisirPhoto = (fichier: File) => {
     setPhoto(fichier);
-    const url = URL.createObjectURL(fichier);
-    setPreview(url);
+    setPreview(URL.createObjectURL(fichier));
     setErreurEnvoi("");
   };
 
   const envoyerPhoto = async () => {
     if (!photo) return;
+    if (!prenom.trim() || !nom.trim() || !actionnaireId.trim()) {
+      setErreurEnvoi("Remplis le prénom, le nom et l'ID de l'actionnaire.");
+      return;
+    }
+
     setEnvoi(true);
     setErreurEnvoi("");
 
     try {
-      // Nom de fichier unique
+      // 1. Chercher l'actionnaire dans la table utilisateurs
+      const { data: utilisateur, error: searchError } = await supabase
+        .from("utilisateurs")
+        .select("id, full_name")
+        .eq("id", actionnaireId.trim())
+        .single();
+
+      if (searchError || !utilisateur) {
+        throw new Error("❌ Actionnaire non trouvé. Vérifiez le nom et l'ID.");
+      }
+
+      // Vérifier que le nom correspond (insensible à la casse)
+      const fullNameSaisi = `${prenom.trim()} ${nom.trim()}`.toLowerCase();
+      const fullNameBdd = (utilisateur.full_name ?? "").toLowerCase();
+      if (!fullNameBdd.includes(prenom.trim().toLowerCase()) || !fullNameBdd.includes(nom.trim().toLowerCase())) {
+        throw new Error("❌ Actionnaire non trouvé. Vérifiez le nom et l'ID.");
+      }
+
+      // 2. Upload dans Storage
       const ext = photo.name.split(".").pop() ?? "jpg";
       const nomFichier = `photo_${Date.now()}.${ext}`;
 
-      // Upload dans Storage
       const { error: uploadError } = await supabase.storage
         .from("terrain-photos")
         .upload(nomFichier, photo, { contentType: photo.type, upsert: false });
 
       if (uploadError) throw new Error(uploadError.message);
 
-      // URL publique
+      // 3. URL publique
       const { data: urlData } = supabase.storage
         .from("terrain-photos")
         .getPublicUrl(nomFichier);
 
-      const photoUrl = urlData.publicUrl;
-
-      // Insertion dans la table
+      // 4. Insertion dans la table avec actionnaire_id
       const { error: insertError } = await supabase
         .from("updates_terrain")
-        .insert({ photo_url: photoUrl, message: message.trim() || null });
+        .insert({
+          photo_url: urlData.publicUrl,
+          message: message.trim() || null,
+          actionnaire_id: utilisateur.id,
+        });
 
       if (insertError) throw new Error(insertError.message);
 
-      // Succès
       setEtape("succes");
     } catch (err: unknown) {
       setErreurEnvoi(
@@ -90,6 +118,9 @@ export default function TerrainUpload() {
     setPhoto(null);
     setPreview(null);
     setMessage("");
+    setPrenom("");
+    setNom("");
+    setActionnaireId("");
     setErreurEnvoi("");
     setEtape("formulaire");
   };
@@ -108,10 +139,7 @@ export default function TerrainUpload() {
             onChange={(e) => setMdp(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && connexion()}
             placeholder="Mot de passe"
-            style={{
-              ...s.input,
-              borderColor: erreurMdp ? "#ef4444" : "#2A7A4F",
-            }}
+            style={{ ...s.input, borderColor: erreurMdp ? "#ef4444" : "#2A7A4F" }}
             autoComplete="current-password"
           />
           {erreurMdp && (
@@ -136,7 +164,7 @@ export default function TerrainUpload() {
           <p style={{ fontSize: 64, margin: "0 0 16px" }}>📸</p>
           <p style={{ ...s.titre, color: "#4ade80" }}>Photo envoyée !</p>
           <p style={s.sousTitre}>
-            Merci ! Les actionnaires vont adorer voir la forêt.
+            Merci ! L'actionnaire va recevoir la photo de sa forêt.
           </p>
           <button style={s.btnPrincipal} onClick={recommencer}>
             Envoyer une autre photo
@@ -152,59 +180,81 @@ export default function TerrainUpload() {
       <p style={s.logo}>🌿 GREENHOLD</p>
       <p style={s.titre}>Photo de la forêt</p>
       <p style={s.sousTitre}>
-        Prends une photo et envoie-la aux actionnaires 🌍
+        Remplis les infos de l'actionnaire, puis envoie la photo 🌍
       </p>
 
-      {/* Inputs fichier cachés */}
-      <input
-        ref={inputCameraRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        style={{ display: "none" }}
-        onChange={(e) => e.target.files?.[0] && choisirPhoto(e.target.files[0])}
-      />
-      <input
-        ref={inputGalerieRef}
-        type="file"
-        accept="image/*"
-        style={{ display: "none" }}
-        onChange={(e) => e.target.files?.[0] && choisirPhoto(e.target.files[0])}
-      />
+      {/* ── Infos actionnaire ── */}
+      <div style={s.section}>
+        <p style={s.sectionTitre}>👤 Pour quel actionnaire ?</p>
+        <input
+          type="text"
+          value={prenom}
+          onChange={(e) => setPrenom(e.target.value)}
+          placeholder="Prénom de l'actionnaire"
+          style={s.input}
+          autoComplete="off"
+        />
+        <input
+          type="text"
+          value={nom}
+          onChange={(e) => setNom(e.target.value)}
+          placeholder="Nom de l'actionnaire"
+          style={s.input}
+          autoComplete="off"
+        />
+        <input
+          type="text"
+          value={actionnaireId}
+          onChange={(e) => setActionnaireId(e.target.value)}
+          placeholder="ID actionnaire (sur le certificat PDF)"
+          style={{ ...s.input, fontSize: 14, letterSpacing: 0.5 }}
+          autoComplete="off"
+        />
+      </div>
 
-      {/* Boutons choix photo */}
-      {!preview && (
-        <div style={s.choixBtns}>
-          <button
-            style={s.btnChoix}
-            onClick={() => inputCameraRef.current?.click()}
-          >
-            📸 Prendre une photo
-          </button>
-          <button
-            style={{ ...s.btnChoix, backgroundColor: "#1A4D35" }}
-            onClick={() => inputGalerieRef.current?.click()}
-          >
-            🖼️ Choisir dans la galerie
-          </button>
-        </div>
-      )}
+      {/* ── Photo ── */}
+      <div style={s.section}>
+        <p style={s.sectionTitre}>📸 La photo</p>
+        <input
+          ref={inputCameraRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          style={{ display: "none" }}
+          onChange={(e) => e.target.files?.[0] && choisirPhoto(e.target.files[0])}
+        />
+        <input
+          ref={inputGalerieRef}
+          type="file"
+          accept="image/*"
+          style={{ display: "none" }}
+          onChange={(e) => e.target.files?.[0] && choisirPhoto(e.target.files[0])}
+        />
 
-      {/* Prévisualisation */}
-      {preview && (
-        <div style={s.previewContainer}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={preview} alt="Prévisualisation" style={s.previewImg} />
-          <button
-            style={s.btnChanger}
-            onClick={() => inputGalerieRef.current?.click()}
-          >
-            Changer la photo
-          </button>
-        </div>
-      )}
+        {!preview ? (
+          <div style={s.choixBtns}>
+            <button style={s.btnChoix} onClick={() => inputCameraRef.current?.click()}>
+              📸 Prendre une photo
+            </button>
+            <button
+              style={{ ...s.btnChoix, backgroundColor: "#1A4D35" }}
+              onClick={() => inputGalerieRef.current?.click()}
+            >
+              🖼️ Choisir dans la galerie
+            </button>
+          </div>
+        ) : (
+          <div style={s.previewContainer}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={preview} alt="Prévisualisation" style={s.previewImg} />
+            <button style={s.btnChanger} onClick={() => inputGalerieRef.current?.click()}>
+              Changer la photo
+            </button>
+          </div>
+        )}
+      </div>
 
-      {/* Message optionnel */}
+      {/* ── Message optionnel ── */}
       <textarea
         value={message}
         onChange={(e) => setMessage(e.target.value)}
@@ -216,8 +266,8 @@ export default function TerrainUpload() {
 
       {/* Erreur */}
       {erreurEnvoi && (
-        <p style={{ color: "#ef4444", fontSize: 16, margin: "8px 0" }}>
-          ❌ {erreurEnvoi}
+        <p style={{ color: "#ef4444", fontSize: 16, margin: "8px 0", maxWidth: 440, textAlign: "center" }}>
+          {erreurEnvoi}
         </p>
       )}
 
@@ -225,6 +275,7 @@ export default function TerrainUpload() {
       <button
         style={{
           ...s.btnPrincipal,
+          maxWidth: 440,
           backgroundColor: !photo || envoi ? "#6B7280" : "#16a34a",
           cursor: !photo || envoi ? "not-allowed" : "pointer",
         }}
@@ -254,12 +305,7 @@ const s: Record<string, React.CSSProperties> = {
     fontFamily: "system-ui, sans-serif",
     boxSizing: "border-box",
   },
-  logo: {
-    fontSize: 28,
-    fontWeight: "bold",
-    letterSpacing: 2,
-    margin: "0 0 32px",
-  },
+  logo: { fontSize: 28, fontWeight: "bold", letterSpacing: 2, margin: "0 0 32px" },
   authCard: {
     width: "100%",
     maxWidth: 440,
@@ -271,19 +317,20 @@ const s: Record<string, React.CSSProperties> = {
     alignItems: "center",
     gap: 16,
   },
-  titre: {
-    fontSize: 28,
-    fontWeight: "bold",
-    margin: 0,
-    textAlign: "center",
+  titre: { fontSize: 28, fontWeight: "bold", margin: "0 0 4px", textAlign: "center" },
+  sousTitre: { fontSize: 18, color: "#C8E6D4", margin: "0 0 16px", textAlign: "center", lineHeight: 1.5 },
+  section: {
+    width: "100%",
+    maxWidth: 440,
+    backgroundColor: "#1A4D35",
+    borderRadius: 16,
+    padding: "20px 20px 8px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+    marginBottom: 20,
   },
-  sousTitre: {
-    fontSize: 18,
-    color: "#C8E6D4",
-    margin: 0,
-    textAlign: "center",
-    lineHeight: 1.5,
-  },
+  sectionTitre: { fontSize: 18, fontWeight: "bold", margin: "0 0 4px" },
   input: {
     width: "100%",
     padding: "16px 18px",
@@ -307,14 +354,7 @@ const s: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     marginTop: 8,
   },
-  choixBtns: {
-    width: "100%",
-    maxWidth: 440,
-    display: "flex",
-    flexDirection: "column",
-    gap: 16,
-    marginBottom: 24,
-  },
+  choixBtns: { width: "100%", display: "flex", flexDirection: "column", gap: 12 },
   btnChoix: {
     width: "100%",
     minHeight: 70,
@@ -326,14 +366,7 @@ const s: Record<string, React.CSSProperties> = {
     fontWeight: "bold",
     cursor: "pointer",
   },
-  previewContainer: {
-    width: "100%",
-    maxWidth: 440,
-    display: "flex",
-    flexDirection: "column",
-    gap: 12,
-    marginBottom: 20,
-  },
+  previewContainer: { width: "100%", display: "flex", flexDirection: "column", gap: 12 },
   previewImg: {
     width: "100%",
     maxHeight: 400,
@@ -366,10 +399,5 @@ const s: Record<string, React.CSSProperties> = {
     boxSizing: "border-box",
     fontFamily: "system-ui, sans-serif",
   },
-  footer: {
-    marginTop: 24,
-    fontSize: 14,
-    color: "#C8E6D4",
-    textAlign: "center",
-  },
+  footer: { marginTop: 24, fontSize: 14, color: "#C8E6D4", textAlign: "center" },
 };
