@@ -1,8 +1,10 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 const FROM = process.env.RESEND_FROM_EMAIL ?? "GREENHOLD <contact@greenhold.fr>";
+
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -109,7 +111,7 @@ export async function sendConfirmationEmail({
     </div>
   `;
 
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to,
     subject: `Confirmation d'achat — ${packName} GREENHOLD`,
@@ -180,7 +182,7 @@ export async function sendWelcomeDayOneEmail({
     </div>
   `;
 
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to,
     subject: "Ton arbre est en cours de plantation",
@@ -246,7 +248,7 @@ export async function sendFirstPaymentEmail({
     </div>
   `;
 
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to,
     subject: "Ton premier virement arrive !",
