@@ -158,7 +158,6 @@ function Dashboard({ user, onSignOut }: { user: User; onSignOut: () => void }) {
       const { data } = await supabase
         .from("updates_terrain")
         .select("id, created_at, photo_url, message")
-        .eq("statut", "visible")
         .eq("actionnaire_id", user.id)
         .order("created_at", { ascending: false });
       if (data) setTerrainPhotos(data as TerrainPhoto[]);
@@ -485,8 +484,7 @@ function Dashboard({ user, onSignOut }: { user: User; onSignOut: () => void }) {
           href="#photos-terrain"
           className="rounded-2xl p-5 flex items-center gap-4"
           style={{
-            backgroundColor: "#F8F4EE",
-            border: "1px solid #DDE8E2",
+            backgroundColor: "#2A7A4F",
             borderRadius: "8px",
             textDecoration: "none",
           }}
@@ -494,20 +492,20 @@ function Dashboard({ user, onSignOut }: { user: User; onSignOut: () => void }) {
           <span className="text-3xl">📸</span>
           <div>
             <p
-              className="font-semibold text-sm"
-              style={{ color: "#0C2518", fontFamily: "var(--font-sans)" }}
+              className="font-semibold text-white text-sm"
+              style={{ fontFamily: "var(--font-sans)" }}
             >
               Mes photos terrain
             </p>
             <p
               className="text-xs mt-0.5"
-              style={{ color: "#6B7280", fontFamily: "var(--font-sans)" }}
+              style={{ color: "#C8E6D4", fontFamily: "var(--font-sans)" }}
             >
               {loadingTerrain
                 ? "Chargement…"
                 : terrainPhotos.length > 0
                 ? `${terrainPhotos.length} photo${terrainPhotos.length > 1 ? "s" : ""} disponible${terrainPhotos.length > 1 ? "s" : ""}`
-                : "Disponibles après plantation"}
+                : "Photos de ma forêt"}
             </p>
           </div>
         </a>
@@ -544,8 +542,7 @@ function Dashboard({ user, onSignOut }: { user: User; onSignOut: () => void }) {
           <div className="text-center py-8">
             <p className="text-4xl mb-3">🌱</p>
             <p className="text-sm" style={{ color: "#6B7280", fontFamily: "var(--font-sans)", lineHeight: 1.7 }}>
-              Il n'y a aucune photo pour le moment, peut-être dans quelques semaines !<br />
-              Notre équipe au Sénégal prépare la plantation.
+              Il n&apos;y a aucune photo pour le moment, peut-être dans quelques semaines !
             </p>
           </div>
         ) : (
