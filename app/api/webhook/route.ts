@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { generateCertificatePDF } from "@/lib/pdf";
-import { sendConfirmationEmail } from "@/lib/emails";
+import { sendConfirmationEmail, sendPlantationNotification } from "@/lib/emails";
 import { generateCertNumber } from "@/app/api/certificate/route";
 
 export const dynamic = "force-dynamic";
@@ -117,6 +117,28 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       console.error("[Webhook] parts insert error:", insertError.message);
+    }
+
+    // Insert demande de plantation
+    const { error: demandeError } = await supabaseAdmin
+      .from("demandes_plantation")
+      .insert({
+        actionnaire_id: userId ?? null,
+        email: buyerEmail,
+        type_arbre: meta.trees,
+        statut: "en_attente",
+      });
+    if (demandeError) {
+      console.error("[Webhook] demandes_plantation insert error:", demandeError.message);
+    }
+
+    // Notify internal team to plant the tree
+    if (buyerEmail) {
+      try {
+        await sendPlantationNotification({ email: buyerEmail, typeArbre: meta.trees });
+      } catch (notifErr) {
+        console.error("[Webhook] Plantation notification error:", notifErr);
+      }
     }
 
     // Also insert into achats (audit log with full Stripe metadata)

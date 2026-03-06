@@ -255,3 +255,49 @@ export async function sendFirstPaymentEmail({
     html,
   });
 }
+
+// ─── 4. Notification interne — nouvel arbre à planter ────────────
+
+interface PlantationNotificationParams {
+  email: string;
+  typeArbre: string;
+}
+
+export async function sendPlantationNotification({
+  email,
+  typeArbre,
+}: PlantationNotificationParams) {
+  return getResend().emails.send({
+    from: FROM,
+    to: "contact@greenhold.fr",
+    subject: "🌱 Nouvel arbre à planter !",
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#F8F4EE;">
+        ${emailHeader}
+        <div style="padding:32px;">
+          <p style="color:#0C2518;font-size:20px;font-weight:bold;margin:0 0 20px;">
+            🌱 Nouvel arbre à planter !
+          </p>
+          <p style="color:#1C2B22;font-size:16px;line-height:1.7;margin:0 0 20px;">
+            Un actionnaire vient d'acheter un arbre.
+          </p>
+          <div style="background:#1A4D35;border-radius:8px;padding:20px;margin:0 0 24px;">
+            <p style="color:#C8E6D4;margin:0 0 10px;font-size:15px;">
+              📧 Email : <strong style="color:white;">${email}</strong>
+            </p>
+            <p style="color:#C8E6D4;margin:0;font-size:15px;">
+              🌳 Arbre : <strong style="color:white;">${typeArbre}</strong>
+            </p>
+          </div>
+          <div style="text-align:center;margin:24px 0;">
+            <a href="https://greenhold.fr/terrain-upload"
+               style="background:#2C5F2D;color:white;padding:16px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">
+              Connecte-toi sur greenhold.fr/terrain-upload →
+            </a>
+          </div>
+        </div>
+        ${emailFooter}
+      </div>
+    `,
+  });
+}
