@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { supabase } from "@/lib/supabase";
 
 const MOT_DE_PASSE = "foret2026";
 const STORAGE_KEY = "terrain_auth";
@@ -9,7 +9,6 @@ const STORAGE_KEY = "terrain_auth";
 type Etape = "auth" | "formulaire" | "succes";
 
 export default function TerrainUpload() {
-  const supabase = createClientComponentClient();
   const [etape, setEtape] = useState<Etape>("auth");
   const [mdp, setMdp] = useState("");
   const [erreurMdp, setErreurMdp] = useState(false);
