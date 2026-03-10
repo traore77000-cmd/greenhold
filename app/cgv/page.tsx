@@ -133,8 +133,8 @@ export default function CGVPage() {
             </div>
 
             <P>
-              Un papayer intercalaire est offert gratuitement avec chaque pack. Cet arbre intercalaire produit dès le mois 9
-              et est naturellement retiré à l'an 3 pour laisser place aux arbres principaux. Il ne constitue pas une part
+              Un papayer intercalaire est offert gratuitement avec chaque pack. Les papayers commencent à produire dès le mois 9 — les premiers revenus arrivent en fin de première année.
+              À l'an 3, il est remplacé par un goyavier ou un manguier permanent pour laisser place aux arbres principaux. Il ne constitue pas une part
               supplémentaire mais un avantage commercial offert par GREENHOLD.
             </P>
           </Section>

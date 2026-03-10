@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Outfit } from "next/font/google";
 import "./globals.css";
+import CookieBanner from "@/components/CookieBanner";
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
@@ -45,6 +46,7 @@ export default function RootLayout({
     <html lang="fr">
       <body className={`${cormorant.variable} ${outfit.variable} antialiased`}>
         {children}
+        <CookieBanner />
       </body>
     </html>
   );

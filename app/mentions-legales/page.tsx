@@ -79,19 +79,18 @@ export default function MentionsLegalesPage() {
           <Section title="1. Éditeur du site">
             <div className="rounded-xl p-6" style={{ backgroundColor: "#FFFFFF", border: "1px solid #DDE8E2" }}>
               <InfoRow label="Dénomination" value="GREENHOLD" />
-              <InfoRow label="Forme juridique" value="Société par actions simplifiée (SAS) — en cours d'immatriculation" />
-              <InfoRow label="Siège social" value="France (adresse complète à compléter lors de l'immatriculation)" />
-              <InfoRow label="SIREN / SIRET" value="En cours d'obtention" />
-              <InfoRow label="Capital social" value="À préciser" />
-              <InfoRow label="Directeur de la publication" value="Le représentant légal de GREENHOLD" />
-              <InfoRow label="Contact" value="contact@greenhold.fr" />
+              <InfoRow label="Propriétaire" value="Gaoussou TRAORE" />
+              <InfoRow label="SIREN" value="102152402" />
+              <InfoRow label="Email" value="contact@greenhold.fr" />
+              <InfoRow label="Site web" value="www.greenhold.fr" />
+              <InfoRow label="Directeur de la publication" value="Gaoussou TRAORE" />
             </div>
           </Section>
 
           <Section title="2. Hébergeur">
             <div className="rounded-xl p-6" style={{ backgroundColor: "#FFFFFF", border: "1px solid #DDE8E2" }}>
               <InfoRow label="Société" value="Vercel Inc." />
-              <InfoRow label="Adresse" value="340 Pine Street, Suite 1201, San Francisco, CA 94104, États-Unis" />
+              <InfoRow label="Adresse" value="440 N Barranca Ave #4133, Covina, CA 91723, USA" />
               <InfoRow label="Site web" value="https://vercel.com" />
               <InfoRow label="Contact" value="https://vercel.com/support" />
             </div>

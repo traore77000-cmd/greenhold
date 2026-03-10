@@ -256,7 +256,70 @@ export async function sendFirstPaymentEmail({
   });
 }
 
-// ─── 4. Notification interne — nouvel arbre à planter ────────────
+// ─── 4. Email séquestre — confirmation mise sous séquestre ───────
+
+interface SequestreEmailParams {
+  to: string;
+  buyerName: string;
+  montant: number;
+}
+
+export async function sendSequestreEmail({
+  to,
+  buyerName,
+  montant,
+}: SequestreEmailParams) {
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#F8F4EE;">
+      ${emailHeader}
+      <div style="padding:40px 32px;">
+        <p style="color:#0C2518;font-size:20px;font-weight:bold;margin:0 0 16px;">
+          🔒 Votre paiement est sécurisé, ${buyerName} !
+        </p>
+        <div style="background:#0C2518;border-radius:8px;padding:24px;margin:24px 0;text-align:center;">
+          <p style="color:#C8972A;font-size:11px;margin:0 0 8px;letter-spacing:2px;font-weight:bold;">
+            MONTANT SOUS SÉQUESTRE
+          </p>
+          <p style="color:#FFFFFF;font-size:32px;font-weight:bold;margin:0;">
+            ${montant.toFixed(2)} €
+          </p>
+        </div>
+        <p style="color:#1C2B22;line-height:1.7;margin:0 0 20px;">
+          Votre paiement de <strong>${montant.toFixed(2)}€</strong> est sécurisé sous séquestre.
+          Il sera libéré dès confirmation de plantation de vos arbres par notre équipe au Sénégal.
+        </p>
+        <div style="background:#FFFFFF;border:1px solid #DDE8E2;border-radius:8px;padding:20px;margin:24px 0;">
+          <p style="color:#0C2518;font-weight:bold;margin:0 0 12px;">Comment ça fonctionne :</p>
+          <p style="color:#1C2B22;margin:6px 0;font-size:14px;">
+            🔒 <strong>Maintenant</strong> — Vos fonds sont placés sous séquestre
+          </p>
+          <p style="color:#1C2B22;margin:6px 0;font-size:14px;">
+            🌱 <strong>Plantation confirmée</strong> — Nos équipes plantent votre arbre au Sénégal
+          </p>
+          <p style="color:#1C2B22;margin:6px 0;font-size:14px;">
+            ✅ <strong>Libération</strong> — Les fonds sont libérés après confirmation terrain
+          </p>
+        </div>
+        <div style="text-align:center;margin:32px 0;">
+          <a href="https://greenhold.fr/mon-espace"
+             style="background:#0C2518;color:#F0C55A;padding:16px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px;">
+            Voir mon espace actionnaire →
+          </a>
+        </div>
+      </div>
+      ${emailFooter}
+    </div>
+  `;
+
+  return getResend().emails.send({
+    from: FROM,
+    to,
+    subject: `Votre paiement de ${montant.toFixed(2)}€ est sécurisé sous séquestre — GREENHOLD`,
+    html,
+  });
+}
+
+// ─── 5. Notification interne — nouvel arbre à planter ────────────
 
 interface PlantationNotificationParams {
   email: string;
@@ -290,9 +353,9 @@ export async function sendPlantationNotification({
             </p>
           </div>
           <div style="text-align:center;margin:24px 0;">
-            <a href="https://greenhold.fr/terrain-upload"
+            <a href="https://greenhold.fr/mon-espace"
                style="background:#2C5F2D;color:white;padding:16px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">
-              Connecte-toi sur greenhold.fr/terrain-upload →
+              Voir l'espace actionnaire →
             </a>
           </div>
         </div>

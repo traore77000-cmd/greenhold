@@ -67,8 +67,9 @@ export default function Footer() {
               {[
                 { label: "Mentions légales", href: "/mentions-legales" },
                 { label: "CGV", href: "/cgv" },
-                { label: "Politique de confidentialité", href: "/confidentialite" },
-                { label: "Conditions d'utilisation", href: "/cgu" },
+                { label: "CGU", href: "/cgu" },
+                { label: "Politique de confidentialité", href: "/politique-confidentialite" },
+                { label: "Politique cookies", href: "/politique-cookies" },
               ].map((link) => (
                 <li key={link.href}>
                   <Link
@@ -134,9 +135,14 @@ export default function Footer() {
 
         {/* Bottom row */}
         <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-center md:text-left" style={{ color: "#6B7280", fontFamily: "var(--font-sans)" }}>
-            © 2024 GREENHOLD — Forêt fruitière mutualisée au Sénégal. Tous droits réservés.
-          </p>
+          <div className="flex flex-col gap-1 text-center md:text-left">
+            <p className="text-xs" style={{ color: "#6B7280", fontFamily: "var(--font-sans)" }}>
+              © 2026 GREENHOLD — Forêt fruitière mutualisée au Sénégal. Tous droits réservés.
+            </p>
+            <p className="text-xs" style={{ color: "#4B5563", fontFamily: "var(--font-sans)" }}>
+              SIREN : 102152402 — contact@greenhold.fr
+            </p>
+          </div>
           <div className="flex items-center gap-4">
             <span className="text-xs" style={{ color: "#2A7A4F", fontFamily: "var(--font-sans)" }}>
               🔒 SSL Sécurisé

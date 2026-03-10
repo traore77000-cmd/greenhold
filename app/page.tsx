@@ -164,6 +164,33 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
+
+            {/* Badge légal */}
+            <div className="flex flex-wrap gap-3 mt-8">
+              {[
+                { icon: "✅", text: "SIREN : 102152402" },
+                { icon: "🔒", text: "Paiement sécurisé Stripe" },
+                { icon: "📄", text: "Contrat PDF envoyé automatiquement" },
+                { icon: "🇫🇷", text: "Entreprise française" },
+              ].map(({ icon, text }) => (
+                <div
+                  key={text}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg"
+                  style={{
+                    backgroundColor: "rgba(255,255,255,0.08)",
+                    border: "1px solid rgba(200,230,212,0.25)",
+                  }}
+                >
+                  <span className="text-sm">{icon}</span>
+                  <span
+                    className="text-xs font-medium"
+                    style={{ color: "#C8E6D4", fontFamily: "var(--font-sans)" }}
+                  >
+                    {text}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
         {/* Decorative leaf */}
@@ -173,6 +200,34 @@ export default function HomePage() {
           aria-hidden="true"
         >
           🌳
+        </div>
+      </section>
+
+      {/* ─── SÉQUESTRE ────────────────────────────────────────── */}
+      <section className="py-10 px-4" style={{ backgroundColor: "#F0F7F4" }}>
+        <div className="mx-auto" style={{ maxWidth: "1200px" }}>
+          <div
+            className="rounded-2xl p-8 flex flex-col md:flex-row items-start md:items-center gap-6"
+            style={{ backgroundColor: "#0C2518" }}
+          >
+            <div className="text-4xl flex-shrink-0">🔒</div>
+            <div>
+              <p
+                className="font-semibold text-white text-lg mb-2"
+                style={{ fontFamily: "var(--font-sans)" }}
+              >
+                Votre argent est sécurisé
+              </p>
+              <p
+                className="text-sm leading-relaxed"
+                style={{ color: "#C8E6D4", fontFamily: "var(--font-sans)", lineHeight: 1.7 }}
+              >
+                Les fonds collectés sont placés sous séquestre jusqu&apos;à la confirmation
+                de plantation de vos arbres. Aucun versement ne quitte le compte avant
+                que votre arbre soit planté et confirmé par notre équipe terrain au Sénégal.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -240,7 +295,7 @@ export default function HomePage() {
               {
                 step: "02",
                 title: "Un arbre + 1 papayer offert",
-                desc: "Ton arbre est planté. Un papayer intercalaire est offert gratuitement. Il produira dès le mois 9.",
+                desc: "Ton arbre est planté. Un papayer intercalaire est offert gratuitement. Les papayers commencent à produire dès le mois 9 — tes premiers revenus arrivent en fin de première année.",
               },
               {
                 step: "03",
@@ -413,7 +468,7 @@ export default function HomePage() {
               color: "#0C2518",
             }}
           >
-            🎁 Le papayer offert — ton premier revenu dès le mois 9
+            🎁 Le papayer offert — les papayers commencent à produire dès le mois 9
           </h2>
           <p
             className="text-center text-base leading-relaxed mb-12"
@@ -425,9 +480,8 @@ export default function HomePage() {
             }}
           >
             À chaque achat GREENHOLD, un papayer est planté gratuitement entre tes
-            arbres principaux. Il produit dès le mois 9. Il génère tes premiers
-            revenus pendant que tes manguiers et goyaviers grandissent. À l&apos;an 3,
-            il s&apos;efface naturellement pour laisser la place aux grands arbres.
+            arbres principaux. Les papayers commencent à produire dès le mois 9 — tes premiers revenus arrivent en fin de première année.
+            À l&apos;an 3, il est remplacé par un goyavier ou un manguier permanent pour laisser la place aux grands arbres.
           </p>
 
           {/* Timeline */}
@@ -502,11 +556,11 @@ export default function HomePage() {
                 sub: "Offert gratuitement",
                 specs: [
                   { label: "Première récolte", value: "Mois 9" },
-                  { label: "Production", value: "80–120 kg/an" },
-                  { label: "Prix marché", value: "0,30€/kg" },
-                  { label: "Durée de vie", value: "3 ans (intercalaire)" },
+                  { label: "Production", value: "20–30 kg/an" },
+                  { label: "Prix marché", value: "0,46€/kg" },
+                  { label: "Durée de vie", value: "3 ans — remplacé après 3 ans par un goyavier ou un manguier permanent" },
                 ],
-                note: "Il génère ton premier revenu pendant que les autres grandissent. Offert avec chaque pack.",
+                note: "Les papayers commencent à produire dès le mois 9 — tes premiers revenus arrivent en fin de première année. Offert avec chaque pack.",
                 highlight: true,
               },
               {
@@ -515,8 +569,8 @@ export default function HomePage() {
                 sub: "Revenus réguliers",
                 specs: [
                   { label: "Première récolte", value: "12–18 mois" },
-                  { label: "Production", value: "75–150 kg/an" },
-                  { label: "Prix marché", value: "0,25€/kg" },
+                  { label: "Production", value: "30–80 kg/an selon les conditions" },
+                  { label: "Prix marché", value: "0,46€/kg" },
                   { label: "Durée de vie", value: "25 ans" },
                 ],
                 note: "Le goyavier sénégalais est une culture phare, très demandée sur les marchés locaux.",
@@ -528,8 +582,8 @@ export default function HomePage() {
                 sub: "Patrimoine long terme",
                 specs: [
                   { label: "Première récolte", value: "3–4 ans" },
-                  { label: "Production", value: "150–200 kg/an" },
-                  { label: "Prix marché", value: "0,40€/kg" },
+                  { label: "Production", value: "50–150 kg/an à maturité" },
+                  { label: "Prix marché", value: "0,61€/kg" },
                   { label: "Durée de vie", value: "40 ans" },
                 ],
                 note: "La mangue sénégalaise est exportée en Europe. Rentabilité maximale sur 40 ans.",

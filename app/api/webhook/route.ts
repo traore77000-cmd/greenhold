@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { generateCertificatePDF } from "@/lib/pdf";
-import { sendConfirmationEmail, sendPlantationNotification } from "@/lib/emails";
+import { sendConfirmationEmail, sendPlantationNotification, sendSequestreEmail } from "@/lib/emails";
 import { generateCertNumber } from "@/app/api/certificate/route";
 
 export const dynamic = "force-dynamic";
@@ -130,6 +130,33 @@ export async function POST(request: NextRequest) {
       });
     if (demandeError) {
       console.error("[Webhook] demandes_plantation insert error:", demandeError.message);
+    }
+
+    // Insert séquestre entry
+    const montantEuros = (amountPaid / 100);
+    const { error: sequestreError } = await supabaseAdmin
+      .from("sequestre")
+      .insert({
+        actionnaire_id: userId ?? null,
+        montant: montantEuros,
+        statut: "en_attente",
+        note: `Pack ${meta.name} — session ${session.id}`,
+      });
+    if (sequestreError) {
+      console.error("[Webhook] sequestre insert error:", sequestreError.message);
+    }
+
+    // Send séquestre email to buyer
+    if (buyerEmail) {
+      try {
+        await sendSequestreEmail({
+          to: buyerEmail,
+          buyerName,
+          montant: montantEuros,
+        });
+      } catch (seqEmailErr) {
+        console.error("[Webhook] Séquestre email error:", seqEmailErr);
+      }
     }
 
     // Notify internal team to plant the tree

@@ -24,13 +24,6 @@ interface PartRecord {
   buyer_email: string | null;
 }
 
-interface TerrainPhoto {
-  id: string;
-  created_at: string;
-  photo_url: string;
-  message: string | null;
-}
-
 const PACK_LABELS: Record<string, string> = {
   decouverte: "Pack Découverte",
   famille: "Pack Famille",
@@ -131,10 +124,6 @@ function Dashboard({ user, onSignOut }: { user: User; onSignOut: () => void }) {
   );
   const [savingReinvest, setSavingReinvest] = useState(false);
   const [reinvestSaved, setReinvestSaved] = useState(false);
-  const [terrainPhotos, setTerrainPhotos] = useState<TerrainPhoto[]>([]);
-  const [loadingTerrain, setLoadingTerrain] = useState(true);
-  const [photoPleinEcran, setPhotoPleinEcran] = useState<string | null>(null);
-
   useEffect(() => {
     async function fetchParts() {
       const { data } = await supabase
@@ -154,26 +143,15 @@ function Dashboard({ user, onSignOut }: { user: User; onSignOut: () => void }) {
       setLoadingParts(false);
     }
 
-    async function fetchTerrain() {
-      const { data } = await supabase
-        .from("updates_terrain")
-        .select("id, created_at, photo_url, message")
-        .eq("actionnaire_id", user.id)
-        .order("created_at", { ascending: false });
-      if (data) setTerrainPhotos(data as TerrainPhoto[]);
-      setLoadingTerrain(false);
-    }
-
     fetchParts();
-    fetchTerrain();
   }, [user.id, user.email]);
 
   const level = getLevel(totalParts ?? 0);
   const referralLink = `https://greenhold.fr/boutique?ref=${user.id.slice(0, 8)}`;
 
-  const an1 = (totalParts ?? 0) * 9.82;
-  const an2 = (totalParts ?? 0) * 16.77;
-  const an5 = (totalParts ?? 0) * 22.4;
+  const an1 = (totalParts ?? 0) * 0.31;
+  const an2 = (totalParts ?? 0) * 2.07;
+  const an5 = (totalParts ?? 0) * 4.35;
 
   const copyReferral = () => {
     navigator.clipboard.writeText(referralLink).then(() => {
@@ -480,146 +458,74 @@ function Dashboard({ user, onSignOut }: { user: User; onSignOut: () => void }) {
             </p>
           </div>
         </Link>
-        <a
-          href="#photos-terrain"
+        <div
           className="rounded-2xl p-5 flex items-center gap-4"
           style={{
             backgroundColor: "#2A7A4F",
             borderRadius: "8px",
-            textDecoration: "none",
           }}
         >
-          <span className="text-3xl">📸</span>
+          <span className="text-3xl">🔒</span>
           <div>
             <p
               className="font-semibold text-white text-sm"
               style={{ fontFamily: "var(--font-sans)" }}
             >
-              Mes photos terrain
+              Fonds sécurisés
             </p>
             <p
               className="text-xs mt-0.5"
               style={{ color: "#C8E6D4", fontFamily: "var(--font-sans)" }}
             >
-              {loadingTerrain
-                ? "Chargement…"
-                : terrainPhotos.length > 0
-                ? `${terrainPhotos.length} photo${terrainPhotos.length > 1 ? "s" : ""} disponible${terrainPhotos.length > 1 ? "s" : ""}`
-                : "Photos de ma forêt"}
+              Argent sous séquestre
             </p>
           </div>
-        </a>
+        </div>
       </div>
 
-      {/* Photos terrain */}
+      {/* Plantation status */}
       <div
-        id="photos-terrain"
+        className="rounded-2xl p-6 mb-4"
+        style={{ backgroundColor: "#1A4D35", borderRadius: "8px" }}
+      >
+        <p
+          className="font-semibold text-white text-base mb-1"
+          style={{ fontFamily: "var(--font-sans)" }}
+        >
+          🌱 Votre forêt est en cours de plantation au Sénégal.
+        </p>
+        <p
+          className="text-sm mt-2"
+          style={{ color: "#C8E6D4", fontFamily: "var(--font-sans)", lineHeight: 1.7 }}
+        >
+          Vous recevrez vos premiers revenus dès la première récolte.
+        </p>
+      </div>
+
+      {/* Séquestre */}
+      <div
         className="rounded-2xl p-6 mb-8"
         style={{
           backgroundColor: "#FFFFFF",
-          border: "1px solid #DDE8E2",
+          border: "2px solid #0C2518",
           borderRadius: "8px",
         }}
       >
         <p
-          className="font-semibold mb-1"
+          className="font-semibold mb-2"
           style={{ color: "#0C2518", fontFamily: "var(--font-sans)" }}
         >
-          📸 Mes photos terrain
+          🔒 Votre argent est sécurisé
         </p>
         <p
-          className="text-xs mb-5"
-          style={{ color: "#6B7280", fontFamily: "var(--font-sans)" }}
+          className="text-sm leading-relaxed"
+          style={{ color: "#1C2B22", fontFamily: "var(--font-sans)", lineHeight: 1.7 }}
         >
-          Photos envoyées depuis la forêt au Sénégal
+          Les fonds collectés sont placés sous séquestre jusqu&apos;à la confirmation de
+          plantation de vos arbres. Aucun versement ne quitte le compte avant que votre
+          arbre soit planté et confirmé par notre équipe terrain au Sénégal.
         </p>
-
-        {loadingTerrain ? (
-          <p className="text-sm" style={{ color: "#6B7280", fontFamily: "var(--font-sans)" }}>
-            Chargement…
-          </p>
-        ) : terrainPhotos.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-4xl mb-3">🌱</p>
-            <p className="text-sm" style={{ color: "#6B7280", fontFamily: "var(--font-sans)", lineHeight: 1.7 }}>
-              Il n&apos;y a aucune photo pour le moment, peut-être dans quelques semaines !
-            </p>
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-            {terrainPhotos.map((p) => (
-              <div
-                key={p.id}
-                style={{
-                  backgroundColor: "#F8F4EE",
-                  borderRadius: 12,
-                  overflow: "hidden",
-                  border: "1px solid #DDE8E2",
-                }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={p.photo_url}
-                  alt="Photo terrain"
-                  style={{
-                    width: "100%",
-                    maxHeight: 340,
-                    objectFit: "cover",
-                    cursor: "zoom-in",
-                    display: "block",
-                  }}
-                  onClick={() => setPhotoPleinEcran(p.photo_url)}
-                />
-                <div style={{ padding: "12px 16px" }}>
-                  <p
-                    className="text-xs font-semibold"
-                    style={{ color: "#6B7280", fontFamily: "var(--font-sans)", marginBottom: 4 }}
-                  >
-                    📅{" "}
-                    {new Date(p.created_at).toLocaleDateString("fr-FR", {
-                      month: "long",
-                      year: "numeric",
-                    })}
-                  </p>
-                  {p.message && (
-                    <p
-                      className="text-sm"
-                      style={{ color: "#1C2B22", fontFamily: "var(--font-sans)", lineHeight: 1.5 }}
-                    >
-                      💬 {p.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
-
-      {/* Lightbox plein écran */}
-      {photoPleinEcran && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(0,0,0,0.92)",
-            zIndex: 1000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 16,
-            cursor: "zoom-out",
-          }}
-          onClick={() => setPhotoPleinEcran(null)}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={photoPleinEcran}
-            alt="Photo terrain plein écran"
-            style={{ maxWidth: "100%", maxHeight: "90vh", objectFit: "contain", borderRadius: 8 }}
-          />
-        </div>
-      )}
 
       {/* Referral link */}
       <div
