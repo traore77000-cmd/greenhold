@@ -134,7 +134,7 @@ export default function StartupCounter() {
 
             <div className="text-center">
               <Link
-                href="/boutique"
+                href="/mon-espace?action=signup"
                 className="inline-block px-8 py-3 rounded-lg font-semibold transition-all duration-200"
                 style={{
                   backgroundColor: "#0C2518",

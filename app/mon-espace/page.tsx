@@ -119,6 +119,7 @@ function Dashboard({ user, onSignOut }: { user: User; onSignOut: () => void }) {
   const [totalParts, setTotalParts] = useState<number | null>(null);
   const [loadingParts, setLoadingParts] = useState(true);
   const [copyDone, setCopyDone] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [reinvestOption, setReinvestOption] = useState<string>(
     (user.user_metadata?.reinvestment as string) ?? "annuel"
   );
@@ -158,6 +159,23 @@ function Dashboard({ user, onSignOut }: { user: User; onSignOut: () => void }) {
       setCopyDone(true);
       setTimeout(() => setCopyDone(false), 2500);
     });
+  };
+
+  const handleDashboardCheckout = async (packId: string) => {
+    setCheckoutLoading(packId);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ packId }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } catch {
+      alert("Une erreur est survenue. Réessaie dans quelques instants.");
+    } finally {
+      setCheckoutLoading(null);
+    }
   };
 
   const saveReinvestOption = async () => {
@@ -480,6 +498,60 @@ function Dashboard({ user, onSignOut }: { user: User; onSignOut: () => void }) {
               Argent sous séquestre
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* ─── Acheter des parts ──────────────────────────────────── */}
+      <div
+        className="rounded-2xl p-6 mb-6"
+        style={{ backgroundColor: "#FFFFFF", border: "1px solid #DDE8E2", borderRadius: "8px" }}
+      >
+        <p className="font-semibold mb-1" style={{ color: "#0C2518", fontFamily: "var(--font-sans)" }}>
+          🌱 Acheter des parts
+        </p>
+        <p className="text-xs mb-5" style={{ color: "#6B7280", fontFamily: "var(--font-sans)" }}>
+          Agrandis ta forêt — paiement sécurisé Stripe, certificat envoyé par e-mail automatiquement.
+        </p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { id: "decouverte",   emoji: "🌱", name: "Découverte",   price: 15,  parts: 1  },
+            { id: "famille",      emoji: "🌳", name: "Famille",      price: 35,  parts: 2  },
+            { id: "investisseur", emoji: "🌍", name: "Investisseur", price: 99,  parts: 5  },
+            { id: "heritage",     emoji: "👴", name: "Héritage",     price: 750, parts: 25 },
+          ].map((pack) => (
+            <div
+              key={pack.id}
+              className="rounded-xl p-4 flex flex-col gap-3"
+              style={{ backgroundColor: "#F8F4EE", border: "1px solid #DDE8E2" }}
+            >
+              <p className="text-2xl">{pack.emoji}</p>
+              <div>
+                <p className="text-sm font-semibold" style={{ color: "#0C2518", fontFamily: "var(--font-sans)" }}>
+                  {pack.name}
+                </p>
+                <p className="text-xl font-bold" style={{ color: "#C8972A", fontFamily: "var(--font-serif)" }}>
+                  {pack.price}€
+                </p>
+                <p className="text-xs" style={{ color: "#6B7280", fontFamily: "var(--font-sans)" }}>
+                  {pack.parts} part{pack.parts > 1 ? "s" : ""}
+                </p>
+              </div>
+              <button
+                onClick={() => handleDashboardCheckout(pack.id)}
+                disabled={checkoutLoading === pack.id}
+                className="w-full py-2 rounded-lg text-xs font-semibold transition-all"
+                style={{
+                  backgroundColor: checkoutLoading === pack.id ? "#6B7280" : "#0C2518",
+                  color: "#F0C55A",
+                  fontFamily: "var(--font-sans)",
+                  cursor: checkoutLoading === pack.id ? "not-allowed" : "pointer",
+                  minHeight: "36px",
+                }}
+              >
+                {checkoutLoading === pack.id ? "Redirection…" : "Acheter →"}
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -943,8 +1015,8 @@ function Dashboard({ user, onSignOut }: { user: User; onSignOut: () => void }) {
 
 // ─── Auth form: login / signup / reset ────────────────────────────
 
-function AuthForm() {
-  const [view, setView] = useState<View>("login");
+function AuthForm({ initialView = "login" }: { initialView?: View }) {
+  const [view, setView] = useState<View>(initialView);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -964,8 +1036,16 @@ function AuthForm() {
           ? "Email ou mot de passe incorrect."
           : error.message;
       setMsg({ type: "error", text: friendly });
+      setSubmitting(false);
+    } else {
+      // Si l'utilisateur venait d'un redirect (?redirect=/boutique?pack=X), on l'y renvoie
+      const redirectTo = new URLSearchParams(window.location.search).get("redirect");
+      if (redirectTo) {
+        window.location.href = redirectTo;
+        return;
+      }
+      setSubmitting(false);
     }
-    setSubmitting(false);
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -1213,7 +1293,7 @@ function AuthForm() {
           </Link>{" "}
           et notre{" "}
           <Link
-            href="/confidentialite"
+            href="/politique-confidentialite"
             className="underline"
             style={{ color: "#C8972A" }}
           >
@@ -1244,8 +1324,15 @@ function LoadingSpinner() {
 export default function MonEspacePage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authInitialView, setAuthInitialView] = useState<View>("login");
 
   useEffect(() => {
+    // Lit ?action=signup dans l'URL pour ouvrir le bon onglet d'emblée
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("action") === "signup") {
+      setAuthInitialView("signup");
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
@@ -1307,7 +1394,7 @@ export default function MonEspacePage() {
         ) : user ? (
           <Dashboard user={user} onSignOut={handleSignOut} />
         ) : (
-          <AuthForm />
+          <AuthForm initialView={authInitialView} />
         )}
       </div>
 

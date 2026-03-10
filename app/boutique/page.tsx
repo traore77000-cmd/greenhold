@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import StartupCounter from "@/components/StartupCounter";
 import RevenueCalculator from "@/components/RevenueCalculator";
+import { supabase } from "@/lib/supabase";
 
 const PACKS = [
   {
@@ -15,11 +16,11 @@ const PACKS = [
     price: 15,
     parts: 1,
     trees: "1 Goyavier + 1 papayer offert",
-    treesDetail: ["1 Goyavier (25 ans, 75–150 kg/an)", "1 Papayer offert (dès mois 9)"],
+    treesDetail: ["1 Goyavier (25 ans, 30–80 kg/an selon les conditions)", "1 Papayer offert (remplacé après 3 ans par un goyavier ou un manguier permanent)"],
     badge: null,
     target: "Curieux, premier achat",
     highlight: false,
-    description: "La porte d'entrée de la forêt GREENHOLD. Parfait pour découvrir le modèle et recevoir ton premier revenu dès le mois 9.",
+    description: "La porte d'entrée de la forêt GREENHOLD. Parfait pour découvrir le modèle — les papayers commencent à produire dès le mois 9, tes premiers revenus arrivent en fin de première année.",
   },
   {
     id: "famille",
@@ -28,7 +29,7 @@ const PACKS = [
     price: 35,
     parts: 2,
     trees: "1 Goyavier + 1 Manguier + 2 papayers offerts",
-    treesDetail: ["1 Goyavier (25 ans)", "1 Manguier (40 ans, 150–200 kg/an)", "2 Papayers offerts"],
+    treesDetail: ["1 Goyavier (25 ans, 30–80 kg/an selon les conditions)", "1 Manguier (40 ans, 50–150 kg/an à maturité)", "2 Papayers offerts (remplacés après 3 ans par des goyaviers ou manguiers permanents)"],
     badge: "LE PLUS POPULAIRE",
     target: "Familles et diversification",
     highlight: true,
@@ -41,7 +42,7 @@ const PACKS = [
     price: 99,
     parts: 5,
     trees: "5 Manguiers + 5 papayers offerts",
-    treesDetail: ["5 Manguiers (40 ans, 150–200 kg/an chacun)", "5 Papayers offerts"],
+    treesDetail: ["5 Manguiers (40 ans, 50–150 kg/an à maturité)", "5 Papayers offerts (remplacés après 3 ans par des manguiers permanents)"],
     badge: null,
     target: "Investisseurs — patrimoine 40 ans",
     highlight: false,
@@ -86,13 +87,22 @@ export default function BoutiquePage() {
   const [selectedPack, setSelectedPack] = useState<string | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
 
-  const handleCheckout = async (packId: string, price: number, name: string) => {
+  // ─── Checkout avec vérification auth ─────────────────────────────────────
+  const handleCheckout = async (packId: string) => {
+    // Vérifie si l'utilisateur est connecté
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      // Redirige vers inscription, puis revient ici avec le pack sélectionné
+      window.location.href = `/mon-espace?action=signup&redirect=/boutique?pack=${packId}`;
+      return;
+    }
+
     setLoading(packId);
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ packId, price, name }),
+        body: JSON.stringify({ packId }),
       });
       const data = await res.json();
       if (data.url) {
@@ -104,6 +114,22 @@ export default function BoutiquePage() {
       setLoading(null);
     }
   };
+
+  // ─── Auto-checkout après retour de l'inscription ─────────────────────────
+  // Si l'URL contient ?pack=X et que l'utilisateur est connecté,
+  // on déclenche le checkout automatiquement (retour depuis /mon-espace)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const autoPackId = params.get("pack");
+    if (!autoPackId || !PACKS.some((p) => p.id === autoPackId)) return;
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        handleCheckout(autoPackId);
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <main>
@@ -274,7 +300,7 @@ export default function BoutiquePage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleCheckout(pack.id, pack.price, pack.name);
+                        handleCheckout(pack.id);
                       }}
                       disabled={loading === pack.id}
                       className="w-full py-3 px-6 rounded-xl font-semibold transition-all duration-200"

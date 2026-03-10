@@ -33,9 +33,9 @@ const PACK_META: Record<string, { name: string; description: string; nombre_part
 // Cela empêche toute manipulation du montant (ex: payer 0.01€).
 const PRIX_FIXES: Record<string, number> = {
   decouverte:   15,
-  famille:      25,
-  investisseur: 59,
-  heritage:     250,
+  famille:      35,
+  investisseur: 99,
+  heritage:     750,
 };
 
 export async function POST(request: NextRequest) {
