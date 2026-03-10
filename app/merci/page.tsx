@@ -273,8 +273,8 @@ export default async function MerciPage({
               },
               {
                 icon: "💰",
-                step: "Premier revenu mois 9",
-                desc: "Grâce au papayer intercalaire offert",
+                step: "Premiers revenus en fin d'année 1",
+                desc: "Les papayers commencent à produire dès le mois 9 — tes premiers revenus arrivent en fin de première année",
                 done: false,
               },
             ].map(({ icon, step, desc, done }) => (

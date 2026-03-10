@@ -16,7 +16,7 @@ const FAQ_ITEMS = [
   {
     question: "Quand je reçois mon premier virement ?",
     answer:
-      "Dès le mois 9 grâce au papayer intercalaire offert gratuitement à chaque achat. Le papayer est le plus rapide à produire. Pendant que tes manguiers et goyaviers grandissent, le papayer génère tes premiers revenus.",
+      "Les papayers commencent à produire dès le mois 9 — tes premiers revenus arrivent en fin de première année, grâce au papayer intercalaire offert gratuitement à chaque achat. Pendant que tes manguiers et goyaviers grandissent, le papayer génère tes premiers revenus.",
   },
   {
     question: "Comment fonctionne le réinvestissement ?",

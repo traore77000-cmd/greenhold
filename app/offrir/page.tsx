@@ -15,9 +15,9 @@ const OCCASIONS = [
   { icon: "🎄", label: "Noël", message: "Je t'offre un arbre fruitier au Sénégal pour Noël 🎄 Ton arbre va grandir, produire des fruits, et te rapporter des revenus à vie. C'est mon cadeau le plus original — un arbre qui grandit à vie." },
   { icon: "🌙", label: "Ramadan", message: "Pour ce Ramadan béni, je t'offre un arbre fruitier 🌿 Un cadeau qui nourrit et qui dure — planté à ton nom au Sénégal. Que cet arbre soit une source de baraka pour toi et ta famille." },
   { icon: "💐", label: "Fête des Mères", message: "Maman, je t'offre un arbre fruitier qui produira pendant 40 ans 💐 Ton arbre est planté à ton nom au Sénégal. Chaque année, il produira des fruits et te rapportera des revenus. Parce que tu mérites un cadeau qui dure." },
-  { icon: "👨", label: "Fête des Pères", message: "Papa, je t'offre le cadeau que tu n'as jamais reçu 🌳 Un arbre fruitier planté à ton nom au Sénégal. Tes revenus arrivent dès le mois 9. Un investissement qui grandira avec toi." },
+  { icon: "👨", label: "Fête des Pères", message: "Papa, je t'offre le cadeau que tu n'as jamais reçu 🌳 Un arbre fruitier planté à ton nom au Sénégal. Les papayers commencent à produire dès le mois 9 — tes premiers revenus arrivent en fin de première année. Un investissement qui grandira avec toi." },
   { icon: "👶", label: "Naissance", message: "Bienvenue dans le monde 👶 J'ai planté un arbre fruitier à ton nom au Sénégal le jour de ta naissance. Il grandira avec toi, et produira des fruits pendant toute ta vie." },
-  { icon: "🎓", label: "Diplôme", message: "Félicitations pour ton diplôme ! 🎓 Je t'offre un arbre fruitier au Sénégal — un cadeau qui grandira avec toi et tes ambitions. Tes premiers revenus arrivent dans 9 mois." },
+  { icon: "🎓", label: "Diplôme", message: "Félicitations pour ton diplôme ! 🎓 Je t'offre un arbre fruitier au Sénégal — un cadeau qui grandira avec toi et tes ambitions. Les papayers commencent à produire dès le mois 9 — tes premiers revenus arrivent en fin de première année." },
 ];
 
 export default function OffirPage() {

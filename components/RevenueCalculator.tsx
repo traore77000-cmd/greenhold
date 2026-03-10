@@ -3,19 +3,20 @@
 import { useState } from "react";
 import Link from "next/link";
 
+// Revenus par part (1 part = 15€) basés sur les prix réels du marché sénégalais
 const REVENUE_TABLE: Record<string, number> = {
-  an1: 9.82,
-  an2: 16.77,
-  an5: 22.40,
-  an10: 35.0,
+  an1: 0.31,
+  an2: 2.07,
+  an5: 4.35,
+  an10: 11.70,
 };
 
 function formatEuro(amount: number): string {
   return new Intl.NumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(amount);
 }
 
@@ -69,7 +70,7 @@ export default function RevenueCalculator() {
       {/* Revenue Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {[
-          { label: "Année 1", key: "an1", sub: "Papayer offert" },
+          { label: "Année 1", key: "an1", sub: "Papayers actifs" },
           { label: "Année 2", key: "an2", sub: "Goyaviers actifs" },
           { label: "Année 5", key: "an5", sub: "Pleine production" },
           { label: "Année 10", key: "an10", sub: "Maturité complète" },
@@ -107,19 +108,15 @@ export default function RevenueCalculator() {
         style={{ backgroundColor: "#0C2518", border: "1px solid #C8972A" }}
       >
         <p className="text-sm mb-1" style={{ color: "#F0C55A", fontFamily: "var(--font-sans)" }}>
-          💡 Avec réinvestissement 50%
+          💡 Réinvestissement
         </p>
         <p className="text-sm" style={{ color: "#C8E6D4", fontFamily: "var(--font-sans)" }}>
-          Tes parts doublent en 10 ans automatiquement.{" "}
-          <strong style={{ color: "#C8972A" }}>
-            {parts} parts → {parts * 2} parts
-          </strong>{" "}
-          sans débourser un euro de plus.
+          En réinvestissant tes revenus, tu peux acquérir de nouvelles parts au fil des années et faire croître ton patrimoine forestier progressivement.
         </p>
       </div>
 
       {/* CTA */}
-      <div className="text-center">
+      <div className="text-center mb-6">
         <Link
           href={`/boutique?parts=${parts}`}
           className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200"
@@ -134,6 +131,14 @@ export default function RevenueCalculator() {
           <span>→</span>
         </Link>
       </div>
+
+      {/* Mention légale */}
+      <p
+        className="text-sm text-center italic"
+        style={{ color: "#6B7280", fontFamily: "var(--font-sans)" }}
+      >
+        Les projections affichées sont basées sur les prix moyens du marché local sénégalais (goyave et mangue : 300-400 FCFA/kg) et des rendements agricoles moyens constatés en zone des Niayes. Les revenus réels peuvent varier selon les conditions climatiques et agricoles. GREENHOLD s&apos;engage à publier un rapport annuel détaillé.
+      </p>
     </div>
   );
 }
