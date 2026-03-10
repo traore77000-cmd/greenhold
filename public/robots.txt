@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Bloquer les routes sensibles / privées
+Disallow: /api/
+Disallow: /mon-espace/
+Disallow: /admin/
+Disallow: /merci/
+
+Sitemap: https://www.greenhold.fr/sitemap.xml

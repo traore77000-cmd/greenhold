@@ -28,12 +28,21 @@ const PACK_META: Record<string, { name: string; description: string; nombre_part
   },
 };
 
+// ─── PRIX FIXES CÔTÉ SERVEUR ───────────────────────────────────────────────
+// Le client n'envoie JAMAIS le prix — c'est toujours le serveur qui décide.
+// Cela empêche toute manipulation du montant (ex: payer 0.01€).
+const PRIX_FIXES: Record<string, number> = {
+  decouverte:   15,
+  famille:      25,
+  investisseur: 59,
+  heritage:     250,
+};
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const {
       packId,
-      price,
       gift = false,
       recipientName,
       recipientEmail,
@@ -42,7 +51,13 @@ export async function POST(request: NextRequest) {
       sendDate,
     } = body;
 
-    const meta = PACK_META[packId] ?? { name: `Pack GREENHOLD`, description: "Parts dans la forêt GREENHOLD" };
+    // Validation du pack — rejet immédiat si le packId est inconnu
+    const prixServeur = PRIX_FIXES[packId];
+    if (!prixServeur) {
+      return NextResponse.json({ error: "Pack invalide" }, { status: 400 });
+    }
+
+    const meta = PACK_META[packId];
     const productName = body.name ?? meta.name;
 
     const baseUrl =
@@ -72,7 +87,7 @@ export async function POST(request: NextRequest) {
               name: productName,
               description: meta.description,
             },
-            unit_amount: Math.round(price * 100),
+            unit_amount: Math.round(prixServeur * 100),
           },
           quantity: 1,
         },
